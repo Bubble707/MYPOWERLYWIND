@@ -1,0 +1,6 @@
+Business Name,EIN/TIN,Contact Name,Email,Phone,Business Type,Address Line 1,Address Line 2,City,State,ZIP Code,Country
+Acme Corporation,12-3456789,John Smith,john@acme.com,(555) 123-4567,corporation,123 Business Ave,Suite 100,New York,NY,10001,US
+Tech Solutions LLC,98-7654321,Jane Doe,jane@techsolutions.com,(555) 234-5678,llc,456 Tech Street,Floor 5,San Francisco,CA,94102,US
+Global Enterprises,45-6789012,Bob Johnson,bob@global.com,(555) 345-6789,corporation,789 Global Blvd,,Los Angeles,CA,90001,US
+Smith & Partners,78-9012345,Alice Williams,alice@smithpartners.com,(555) 456-7890,partnership,321 Partner Lane,Suite 200,Chicago,IL,60601,US
+Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901,individual,654 Freelance Dr,,Austin,TX,78701,US

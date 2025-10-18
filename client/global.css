@@ -1,0 +1,419 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Tailwind CSS theme
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+   * A different format will require also updating the theme in tailwind.config.ts.
+  */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* SignMary Teal/Cyan Professional Theme */
+    --primary: 189 94% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 189 100% 96%;
+    --secondary-foreground: 189 94% 20%;
+
+    --muted: 189 30% 96%;
+    --muted-foreground: 189 10% 46%;
+
+    --accent: 174 72% 56%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 189 31.8% 91.4%;
+    --input: 189 31.8% 91.4%;
+    --ring: 189 94% 43%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 221 83% 53%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  :where(p, span, li, h1, h2, h3, h4, h5, h6, a, button, label, td, th) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* SignMary Teal/Cyan gradient backgrounds */
+  .gradient-bg {
+    background: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(174 72% 56%) 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Smooth transitions */
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Professional shadows */
+  .professional-shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .professional-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes confetti {
+    0% {
+      transform: translateY(-100%) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-confetti {
+    animation: confetti 3s ease-out forwards;
+  }
+
+  /* SignMary Blue Theme - Primary Color */
+  :root {
+    --signmary-blue: #007AFF; /* SignMary primary blue */
+    --signmary-blue-hover: #0056CC; /* Darker blue for hover */
+    --signmary-blue-active: #004099; /* Even darker for active */
+    --signmary-blue-light: #E5F2FF; /* Light blue for backgrounds */
+  }
+
+  /* Button Color Variables */
+  :root {
+    --button-default: #2563eb; /* blue-600 */
+    --button-hover: #1d4ed8; /* blue-700 */
+    --button-active: #1e40af; /* blue-800 */
+    --button-disabled-bg: #9ca3af; /* gray-400 */
+    --button-disabled-text: #6b7280; /* gray-500 */
+  }
+
+  /* Button Hover & Active State Fixes - Unified Blue Theme */
+  button:not(:disabled) {
+    transition: all 0.2s ease-in-out;
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  /* Standardize ALL primary buttons */
+  button.bg-blue-600:not(:disabled),
+  button.bg-blue-700:not(:disabled),
+  button.bg-cyan-600:not(:disabled),
+  button.bg-teal-600:not(:disabled),
+  button.bg-green-600:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    border-radius: 0.5rem !important;
+    font-weight: 600 !important;
+  }
+
+  button.bg-blue-600:hover:not(:disabled),
+  button.bg-blue-700:hover:not(:disabled),
+  button.bg-cyan-600:hover:not(:disabled),
+  button.bg-teal-600:hover:not(:disabled),
+  button.bg-green-600:hover:not(:disabled) {
+    background-color: var(--button-hover) !important;
+    color: white !important;
+  }
+
+  button.bg-blue-600:active:not(:disabled),
+  button.bg-blue-700:active:not(:disabled),
+  button.bg-cyan-600:active:not(:disabled),
+  button.bg-teal-600:active:not(:disabled),
+  button.bg-green-600:active:not(:disabled) {
+    background-color: var(--button-active) !important;
+    color: white !important;
+  }
+
+  /* Disabled state */
+  button:disabled {
+    background-color: var(--button-disabled-bg) !important;
+    color: var(--button-disabled-text) !important;
+    cursor: not-allowed !important;
+  }
+
+  /* Gray buttons for secondary actions */
+  button.bg-gray-600:hover:not(:disabled) {
+    background-color: rgb(75, 85, 99) !important;
+    color: white !important;
+  }
+
+  /* Outline buttons */
+  button.border-blue-300:hover:not(:disabled),
+  button.border-blue-400:hover:not(:disabled),
+  button.border-cyan-300:hover:not(:disabled),
+  button.border-teal-300:hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    border-color: var(--button-active) !important;
+    color: white !important;
+  }
+
+  button.border-gray-300:hover:not(:disabled) {
+    background-color: rgb(75, 85, 99) !important;
+    border-color: rgb(55, 65, 81) !important;
+    color: white !important;
+  }
+
+  /* Variant outline buttons */
+  button[class*="variant"]:not([class*="bg-"]):hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    border-color: var(--button-active) !important;
+  }
+
+  /* Active Tab Styling - SignMary Blue */
+  .tab-active {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-bottom: 3px solid var(--button-active) !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3) !important;
+  }
+
+  .tab-inactive {
+    background-color: rgb(243, 244, 246) !important; /* gray-100 */
+    color: rgb(75, 85, 99) !important; /* gray-600 */
+    font-weight: 500 !important;
+    border-bottom: 2px solid transparent !important;
+  }
+
+  .tab-inactive:hover {
+    background-color: rgb(229, 231, 235) !important; /* gray-200 */
+    color: rgb(31, 41, 55) !important; /* gray-800 */
+    border-bottom: 2px solid rgb(209, 213, 219) !important; /* gray-300 */
+  }
+
+  /* Nested Tab Styling (for W9 Issuer, Form Summary, etc.) - SignMary Blue */
+  .nested-tab-active {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3) !important;
+  }
+
+  .nested-tab-inactive {
+    background-color: transparent !important;
+    color: rgb(107, 114, 128) !important; /* gray-500 */
+    font-weight: 500 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .nested-tab-inactive:hover {
+    background-color: var(--signmary-blue-light) !important;
+    color: var(--button-active) !important;
+  }
+
+  /* Step Indicator Active State - SignMary Blue */
+  .step-active {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    border: 2px solid var(--button-active) !important;
+    font-weight: 600 !important;
+  }
+
+  .step-completed {
+    background-color: var(--button-default) !important;
+    color: white !important;
+    border: 2px solid var(--button-hover) !important;
+  }
+
+  .step-inactive {
+    background-color: rgb(229, 231, 235) !important; /* gray-200 */
+    color: rgb(107, 114, 128) !important; /* gray-500 */
+    border: 2px solid rgb(209, 213, 219) !important; /* gray-300 */
+  }
+
+  /* Ensure proper contrast for all clickable elements */
+  a:hover,
+  button:hover:not(:disabled),
+  [role="button"]:hover {
+    opacity: 1 !important;
+  }
+
+  /* Gradient buttons */
+  .gradient-button {
+    background: linear-gradient(135deg, var(--button-default) 0%, var(--button-hover) 100%) !important;
+    color: white !important;
+  }
+
+  .gradient-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--button-hover) 0%, var(--button-active) 100%) !important;
+  }
+
+  /* Text-only buttons */
+  button.text-blue-600:hover:not(:disabled),
+  button.text-blue-700:hover:not(:disabled),
+  button.text-cyan-600:hover:not(:disabled),
+  button.text-teal-600:hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+  }
+
+  /* Accessibility: Ensure focus states are visible - SignMary Blue */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--button-default) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Additional button standardization */
+  button[class*="bg-gradient"] {
+    background: linear-gradient(135deg, var(--button-default) 0%, var(--button-hover) 100%) !important;
+    color: white !important;
+  }
+
+  button[class*="bg-gradient"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--button-hover) 0%, var(--button-active) 100%) !important;
+    color: white !important;
+  }
+
+  /* Fix for ghost/transparent buttons */
+  button[class*="ghost"]:hover:not(:disabled),
+  button[class*="transparent"]:hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+  }
+
+  /* Fix for text-only buttons */
+  button.text-blue-600:hover:not(:disabled),
+  button.text-blue-700:hover:not(:disabled),
+  button.text-cyan-600:hover:not(:disabled),
+  button.text-teal-600:hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+  }
+
+  /* Ensure all buttons with bg classes maintain white text on hover */
+  button[class*="bg-"]:hover:not(:disabled):not(.bg-white):not(.bg-gray-100):not(.bg-gray-50) {
+    color: white !important;
+  }
+
+  /* Fix for buttons with hover:bg classes */
+  button[class*="hover:bg-"]:hover:not(:disabled) {
+    color: white !important;
+  }
+
+  /* Specific fix for common button patterns */
+  button.hover\:bg-blue-50:hover:not(:disabled),
+  button.hover\:bg-blue-100:hover:not(:disabled),
+  button.hover\:bg-gray-50:hover:not(:disabled),
+  button.hover\:bg-gray-100:hover:not(:disabled) {
+    background-color: var(--button-default) !important;
+    color: white !important;
+  }
+}

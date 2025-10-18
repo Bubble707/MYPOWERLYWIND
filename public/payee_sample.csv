@@ -1,0 +1,6 @@
+Recipient Name,SSN/TIN,Email,Address Line 1,Address Line 2,City,State,ZIP Code,Country,Amount,Federal Tax Withheld
+John Doe,123-45-6789,john.doe@email.com,123 Main St,Apt 4B,New York,NY,10001,US,5000.00,500.00
+Jane Smith,987-65-4321,jane.smith@email.com,456 Oak Ave,,Los Angeles,CA,90001,US,7500.00,750.00
+Robert Johnson,555-12-3456,robert.j@email.com,789 Pine Rd,Suite 200,Chicago,IL,60601,US,10000.00,1000.00
+Emily Davis,111-22-3333,emily.davis@email.com,321 Elm St,,Houston,TX,77001,US,6000.00,600.00
+Michael Brown,444-55-6666,michael.b@email.com,654 Maple Dr,Unit 5,Phoenix,AZ,85001,US,8500.00,850.00
