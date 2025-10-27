@@ -27,21 +27,7 @@ import {
   PayeeData,
   TransmitterData,
 } from "@shared/api";
-import { 
-  CheckCircle, 
-  Upload, 
-  FileText, 
-  AlertCircle, 
-  CreditCard, 
-  Download, 
-  Trash2, 
-  ExternalLink, 
-  Users, 
-  Eye, 
-  Building2, 
-  ShieldCheck, 
-  FileDown 
-} from "lucide-react";
+import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2, ExternalLink, Users, Eye, Building2, ShieldCheck, FileDown } from "lucide-react";
 
 const steps = ["Year Selection", "Issuer", "Payee", "E‑Filing", "Success"] as const;
 
