@@ -27,9 +27,14 @@ import {
   PayeeData,
   TransmitterData,
 } from "@shared/api";
-import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2 } from "lucide-react";
+import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2, ExternalLink, Users, Eye, Building2, ShieldCheck, FileDown } from "lucide-react";
+import { ImportFromWordPress } from "@/components/forms/ImportFromWordPress";
+import { WordPressImportResponse } from "@shared/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import WordPressImports from "@/components/forms/WordPressImports";
+import { TinMatchValidation } from "@/components/forms/TinMatchValidation";
 
-const steps = ["Year Selection", "Issuer", "Payee", "E‑Filing", "Success"] as const;
+const steps = ["Year Selection", "Issuer", "Payee", "TIN Match", "E‑Filing", "Success"] as const;
 
 // Enhanced form definitions with proper IRS fields
 const formDefinitions = {
@@ -322,8 +327,11 @@ export default function Index() {
   const [transmitterData, setTransmitterData] = useState<TransmitterData | null>(null);
   const [efileMode, setEfileMode] = useState<"own" | "powerly" | null>(null);
   const [efileStep, setEfileStep] = useState(0);
-  const [trackingId, setTrackingId] = useState<string>("");
+  const [trackingId, setTrackingId] = useState("");
+  const [showWordPressImport, setShowWordPressImport] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [wordpressImportedData, setWordpressImportedData] = useState<any[]>([]);
+  const [tinValidationResults, setTinValidationResults] = useState<any[]>([]);
 
   const progress = useMemo(() => Math.round(((step + 1) / steps.length) * 100), [step]);
 
@@ -365,7 +373,7 @@ export default function Index() {
         // Simulate processing delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         setTrackingId('TRK-' + Math.random().toString(36).substr(2, 9).toUpperCase());
-        setStep(4); // Move to main Success step (step 4 in main steps)
+        setStep(5); // Move to main Success step (step 5 in main steps)
         return;
       }
       
@@ -384,13 +392,13 @@ export default function Index() {
       const result = await response.json();
       if (result.success) {
         setTrackingId(result.trackingId || 'TRK-02047380-62RR77');
-        setStep(4); // Move to main Success step (step 4 in main steps)
+        setStep(5); // Move to main Success step (step 5 in main steps)
       }
     } catch (error) {
       console.error("E-filing error:", error);
       // If API fails, still proceed to success for demo purposes
       setTrackingId('TRK-' + Math.random().toString(36).substr(2, 9).toUpperCase());
-      setStep(4);
+      setStep(5);
     }
   };
 
@@ -408,15 +416,24 @@ export default function Index() {
                 <p className="text-gray-500 text-sm">Professional 1099 Processing</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {step > 0 && (
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold px-4 py-1.5 text-sm">
-                  📅 Tax Year: {selectedYear}
+            <div className="flex items-center justify-between">
+              <div>
+                {step > 0 && (
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold px-4 py-1.5 text-sm">
+                    📅 Tax Year: {selectedYear}
+                  </Badge>
+                )}
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
+                  Step {step + 1} of {steps.length}
                 </Badge>
-              )}
-              <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                Step {step + 1} of {steps.length}
-              </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              >
+                <FileText className="h-5 w-5" />
+              </Button>
             </div>
           </div>
           
@@ -441,13 +458,6 @@ export default function Index() {
               }
             >
               W-9
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-            >
-              <FileText className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -517,15 +527,76 @@ export default function Index() {
                 {step === 0 && "Select the tax year for your 1099 e-filing"}
                 {step === 1 && "Enter your business information as the issuer"}
                 {step === 2 && "Add payee information with form type and details"}
-                {step === 3 && "Choose your e-filing method and submit"}
-                {step === 4 && "E-Filing completed successfully!"}
+                {step === 3 && "Validate recipient TIN/SSN numbers against IRS records"}
+                {step === 4 && "Choose your e-filing method and submit"}
+                {step === 5 && "E-Filing completed successfully!"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {step === 0 && <YearSelectionStep year={selectedYear} onChange={setSelectedYear} />}
               {step === 1 && <IssuerForm data={issuerData} onChange={setIssuerData} />}
-              {step === 2 && <PayeeForm data={payeeData} onChange={setPayeeData} />}
-              {step === 3 && <EFilingStep 
+              {step === 2 && (
+                <Tabs defaultValue="manual" className="w-full">
+                  <TabsList className="grid w-full max-w-md grid-cols-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                    <TabsTrigger value="manual" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                      <Users className="h-4 w-4" />
+                      Manual Entry
+                    </TabsTrigger>
+                    <TabsTrigger value="wordpress" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                      <ExternalLink className="h-4 w-4" />
+                      WordPress Imports
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="manual">
+                    <PayeeForm 
+                      data={payeeData} 
+                      onChange={setPayeeData}
+                      issuerData={issuerData}
+                      formDefinitions={formDefinitions}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="wordpress">
+                    <WordPressImports 
+                      onImport={(affiliates) => {
+                        // Convert WordPress affiliates to payee data
+                        const newPayees: PayeeData[] = affiliates.map(affiliate => ({
+                          payeeName: affiliate.name || '',
+                          einTin: affiliate.ssn || '',
+                          email: affiliate.email || '',
+                          phone: affiliate.phone || '',
+                          address1: affiliate.address || '',
+                          address2: '',
+                          city: affiliate.city || '',
+                          state: affiliate.state || '',
+                          zip: affiliate.zip || '',
+                          country: 'US',
+                          formType: '1099-NEC',
+                          formData: { box1: affiliate.total_earnings?.toString() || '0' }
+                        }));
+                        setPayeeData([...payeeData, ...newPayees]);
+                        setWordpressImportedData(affiliates);
+                      }}
+                      onClose={() => {
+                        // Close the import view
+                        console.log('WordPress import closed');
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
+              )}
+              {step === 3 && (
+                <TinMatchValidation 
+                  payeeData={payeeData}
+                  onValidate={(results) => {
+                    setTinValidationResults(results);
+                    console.log('TIN Validation Results:', results);
+                  }}
+                  onSkip={() => go(step + 1)}
+                />
+              )}
+              {step === 4 && <EFilingStep 
                 efileMode={efileMode}
                 onModeSelect={setEfileMode}
                 efileStep={efileStep}
@@ -537,7 +608,7 @@ export default function Index() {
                 payeeData={payeeData}
                 selectedForm={selectedForm}
               />}
-              {step === 4 && <SuccessStep trackingId={trackingId} onStartOver={() => setStep(0)} />}
+              {step === 5 && <SuccessStep trackingId={trackingId} onStartOver={() => setStep(0)} />}
             </CardContent>
             
             {/* Navigation Footer */}
@@ -555,7 +626,7 @@ export default function Index() {
                   )}
                 </div>
                 <div className="flex gap-3">
-                  {step < steps.length - 1 && step !== 3 && (
+                  {step < steps.length - 1 && step !== 4 && (
                     <Button 
                       onClick={() => go(step + 1)}
                       className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-semibold px-8 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -594,6 +665,45 @@ export default function Index() {
           </Card>
         </div>
       </main>
+
+      {/* WordPress Import Modal */}
+      <ImportFromWordPress
+        open={showWordPressImport}
+        onClose={() => setShowWordPressImport(false)}
+        targetFormType="1099"
+        onImportComplete={(result: WordPressImportResponse) => {
+          console.log('WordPress import completed:', result);
+          if (result.success && result.importedCount > 0) {
+            // In production, fetch actual vendor details from backend using result.importedVendorIds
+            // For now, creating display data based on import result
+            const statuses = ['ACTIVE', 'UNKNOWN'];
+            const pluginSources = ['AffiliateWP', 'WP Affiliate Manager', 'Easy Affiliate'];
+            
+            const newImports = result.importedVendorIds.map((id, index) => ({
+              id,
+              vendorName: `Affiliate ${index + 1}`,
+              email: `affiliate${index + 1}@example.com`,
+              status: statuses[Math.floor(Math.random() * statuses.length)],
+              source: pluginSources[Math.floor(Math.random() * pluginSources.length)],
+              userId: index + 1,
+              paymentInfo: `$${(Math.random() * 100000).toFixed(2)}`,
+              rateCommission: '-',
+              taxId: '-',
+              earnings: Math.random() * 100000,
+              taxWithheld: {
+                fed: Math.random() * 1000,
+                state: Math.random() * 500,
+              },
+              importDate: new Date().toLocaleDateString('en-US', { 
+                year: '2-digit', 
+                month: '2-digit', 
+                day: '2-digit' 
+              }),
+            }));
+            setWordpressImportedData(prev => [...newImports, ...prev]);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -923,12 +1033,27 @@ Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901
 }
 
 // Payee Form Component - Table Format
-function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: PayeeData[]) => void }) {
+function PayeeForm({ 
+  data, 
+  onChange,
+  issuerData,
+  formDefinitions
+}: { 
+  data: PayeeData[]; 
+  onChange: (data: PayeeData[]) => void;
+  issuerData: IssuerData[];
+  formDefinitions: any;
+}) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showFormTypeDialog, setShowFormTypeDialog] = useState(false);
   const [selectedFormForCSV, setSelectedFormForCSV] = useState<FormType | null>(null);
   const [validationErrors, setValidationErrors] = useState<{index: number; fields: string[]}[]>([]);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [selectedIssuerForPayee, setSelectedIssuerForPayee] = useState<string>("");
+  const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
+  
+  // Extended payee type with issuer tracking
+  type ExtendedPayeeData = PayeeData & { issuerEin?: string };
 
   const addPayee = () => {
     const newPayee: PayeeData = {
@@ -1079,6 +1204,116 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
     setShowFormTypeDialog(true);
   };
 
+  const downloadPDFs = (type: 'all' | 'selected', payees: PayeeData[]) => {
+    let dataToDownload = type === 'all' ? payees : payees.filter((_, i) => selectedRecipients.includes(i));
+    
+    if (dataToDownload.length === 0) {
+      alert('No recipients selected');
+      return;
+    }
+
+    // In production, this would generate actual PDF forms
+    // For now, simulate PDF generation
+    alert(`Generating ${dataToDownload.length} PDF form(s)...\n\nIn production, this will:\n• Generate IRS-compliant 1099 forms\n• Include all recipient and payer information\n• Create individual PDFs for each recipient\n• Download as a ZIP file for multiple forms`);
+    
+    // Simulate download
+    const pdfData = dataToDownload.map((payee, idx) => ({
+      recipient: payee.fullName,
+      tin: payee.ssnTin,
+      formType: payee.formType || '1099-NEC',
+      amount: payee.amount
+    }));
+    
+    console.log('PDF Generation Data:', pdfData);
+  };
+
+  const downloadGovForm = (formType: string) => {
+    // Simulate downloading official IRS form
+    alert(`Downloading Official IRS Form: ${formType}\n\nThis will download the blank IRS form in PDF format from official sources.`);
+    
+    // In production, redirect to IRS.gov or serve from local storage
+    const irsFormsUrl = {
+      '1099-NEC': 'https://www.irs.gov/pub/irs-pdf/f1099nec.pdf',
+      '1099-MISC': 'https://www.irs.gov/pub/irs-pdf/f1099msc.pdf',
+      '1099-K': 'https://www.irs.gov/pub/irs-pdf/f1099k.pdf',
+      '1099-INT': 'https://www.irs.gov/pub/irs-pdf/f1099int.pdf',
+      '1099-DIV': 'https://www.irs.gov/pub/irs-pdf/f1099div.pdf',
+    };
+    
+    console.log('IRS Form URL:', irsFormsUrl[formType as keyof typeof irsFormsUrl]);
+  };
+
+  const downloadTinMatchData = (type: 'all' | 'selected', format: 'csv' | 'txt' = 'csv') => {
+    const dataToDownload = type === 'all' ? data : data.filter((_, i) => selectedRecipients.includes(i));
+    
+    if (dataToDownload.length === 0) {
+      alert('No recipients selected');
+      return;
+    }
+
+    // Filter only recipients with TIN numbers
+    const recipientsWithTin = dataToDownload.filter(p => p.ssnTin && p.ssnTin.trim() !== '');
+    
+    if (recipientsWithTin.length === 0) {
+      alert('No recipients with TIN numbers found');
+      return;
+    }
+
+    let content = '';
+    let fileExtension = '';
+    let mimeType = '';
+
+    if (format === 'txt') {
+      // Text format - human-readable
+      content = 'TIN MATCH DATA EXPORT\n';
+      content += '='.repeat(60) + '\n\n';
+      content += `Generated: ${new Date().toLocaleString()}\n`;
+      content += `Total Recipients: ${recipientsWithTin.length}\n\n`;
+      content += '='.repeat(60) + '\n\n';
+      
+      recipientsWithTin.forEach((recipient, index) => {
+        const issuer = issuerData.find(i => i.einTin === (recipient as any).issuerEin);
+        content += `${index + 1}. ${recipient.fullName}\n`;
+        content += `   TIN/SSN: ${recipient.ssnTin}\n`;
+        content += `   Email: ${recipient.email}\n`;
+        content += `   Issuer: ${issuer?.issuerName || 'Not Set'}\n`;
+        content += `   Status: Pending Validation\n\n`;
+      });
+      
+      fileExtension = 'txt';
+      mimeType = 'text/plain';
+    } else {
+      // CSV format
+      const headers = 'Recipient Name,TIN/SSN,Email,Issuer (Payer),Status\n';
+      const rows = recipientsWithTin.map(recipient => {
+        const issuer = issuerData.find(i => i.einTin === (recipient as any).issuerEin);
+        return `"${recipient.fullName}","${recipient.ssnTin}","${recipient.email}","${issuer?.issuerName || 'Not Set'}","Pending Validation"`;
+      }).join('\n');
+      
+      content = headers + rows;
+      fileExtension = 'csv';
+      mimeType = 'text/csv';
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tin_match_data_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    alert(`Downloaded TIN match data for ${recipientsWithTin.length} recipient(s) as ${fileExtension.toUpperCase()}`);
+  };
+  
+  const toggleRecipientSelection = (index: number) => {
+    setSelectedRecipients(prev => 
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
+  };
+
   return (
     <>
       {/* Validation Error Dialog */}
@@ -1153,34 +1388,66 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
       {/* Form Type Selection Dialog */}
       {showFormTypeDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <CardHeader className="border-b">
-              <CardTitle className="text-xl">Select Form Type for CSV Template</CardTitle>
-              <CardDescription>Choose the 1099 form type to generate a customized CSV template</CardDescription>
+          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <FileText className="h-6 w-6 text-blue-600" />
+                Form Type Selection
+              </CardTitle>
+              <CardDescription>Download CSV template or blank IRS form</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(Object.keys(formDefinitions) as FormType[]).map((formType) => (
                   <Card 
                     key={formType}
-                    className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 border-2 hover:border-blue-500"
-                    onClick={() => generateCSVForFormType(formType)}
+                    className="border-2 hover:border-blue-400 transition-all duration-200"
                   >
-                    <CardContent className="p-4 text-center">
-                      <h4 className="font-bold text-lg text-blue-600">{formType}</h4>
-                      <p className="text-xs text-gray-600 mt-1">{formDefinitions[formType].title}</p>
-                      <p className="text-xs text-gray-500 mt-2">{formDefinitions[formType].fields.length} fields</p>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-lg text-blue-600">{formType}</h4>
+                          <p className="text-xs text-gray-600 mt-1">{formDefinitions[formType].title}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formDefinitions[formType].fields.length} fields
+                          </p>
+                        </div>
+                        <FileText className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => generateCSVForFormType(formType)}
+                          size="sm"
+                          className="flex-1 bg-green-600 hover:bg-green-700 gap-1"
+                        >
+                          <Download className="h-3 w-3" />
+                          CSV Template
+                        </Button>
+                        <Button
+                          onClick={() => downloadGovForm(formType)}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50 gap-1"
+                        >
+                          <FileDown className="h-3 w-3" />
+                          IRS Form (PDF)
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-xs text-gray-600">
+                  <p><strong>CSV Template:</strong> For bulk data upload</p>
+                  <p><strong>IRS Form (PDF):</strong> Official blank form from IRS</p>
+                </div>
                 <Button 
                   variant="outline" 
                   onClick={() => setShowFormTypeDialog(false)}
                   className="border-gray-300"
                 >
-                  Cancel
+                  Close
                 </Button>
               </div>
             </CardContent>
@@ -1195,7 +1462,7 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
             <h3 className="text-lg font-semibold">Recipient Information</h3>
             <p className="text-sm text-gray-600">Add payee details one by one or upload via CSV</p>
           </div>
-        <div className="flex gap-2">
+          <div className="flex gap-2">
           <Button 
             onClick={downloadSampleCSV} 
             variant="outline"
@@ -1224,6 +1491,114 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
           </Button>
         </div>
       </div>
+      
+      {/* PDF Download Options */}
+      {data.length > 0 && (
+        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                    Download Options
+                  </h4>
+                  <p className="text-xs text-gray-600">Download filled PDF forms, TIN data, or blank IRS forms</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => downloadPDFs('selected', data)}
+                    disabled={selectedRecipients.length === 0}
+                    variant="outline"
+                    className="gap-2 border-purple-600 text-purple-600 hover:bg-purple-50"
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4" />
+                    Selected PDFs ({selectedRecipients.length})
+                  </Button>
+                  <Button
+                    onClick={() => downloadPDFs('all', data)}
+                    className="gap-2 bg-purple-600 hover:bg-purple-700"
+                    size="sm"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    All PDFs ({data.length})
+                  </Button>
+                  <Button
+                    onClick={() => setShowFormTypeDialog(true)}
+                    variant="outline"
+                    className="gap-2 border-orange-600 text-orange-600 hover:bg-orange-50"
+                    size="sm"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Blank IRS Forms
+                  </Button>
+                </div>
+              </div>
+              
+              {/* TIN Match Download Section */}
+              <div className="pt-2 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-blue-600" />
+                      TIN Match Data Export
+                    </h4>
+                    <p className="text-xs text-gray-600">Download in CSV or TXT format for IRS validation</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    {data.filter(p => p.ssnTin).length} recipient(s) with TIN
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => downloadTinMatchData('all', 'csv')}
+                      variant="outline"
+                      className="gap-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                      size="sm"
+                    >
+                      <Download className="h-3 w-3" />
+                      CSV
+                    </Button>
+                    <Button
+                      onClick={() => downloadTinMatchData('all', 'txt')}
+                      className="gap-1 bg-blue-600 hover:bg-blue-700"
+                      size="sm"
+                    >
+                      <FileText className="h-3 w-3" />
+                      TXT
+                    </Button>
+                    {selectedRecipients.length > 0 && (
+                      <>
+                        <div className="border-l border-gray-300 mx-1"></div>
+                        <Button
+                          onClick={() => downloadTinMatchData('selected', 'csv')}
+                          variant="outline"
+                          className="gap-1 border-green-600 text-green-600 hover:bg-green-50"
+                          size="sm"
+                        >
+                          <Download className="h-3 w-3" />
+                          Selected CSV ({selectedRecipients.length})
+                        </Button>
+                        <Button
+                          onClick={() => downloadTinMatchData('selected', 'txt')}
+                          variant="outline"
+                          className="gap-1 border-green-600 text-green-600 hover:bg-green-50"
+                          size="sm"
+                        >
+                          <FileText className="h-3 w-3" />
+                          Selected TXT ({selectedRecipients.length})
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {data.length === 0 ? (
         <Card className="professional-shadow">
@@ -1243,9 +1618,24 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedRecipients.length === data.length && data.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRecipients(data.map((_, i) => i));
+                          } else {
+                            setSelectedRecipients([]);
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SSN/TIN</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issuer (Payer)</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
@@ -1258,9 +1648,29 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
                   {data.map((payee, index) => (
                     <>
                       <tr key={index} className="hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedRecipients.includes(index)}
+                            onChange={() => toggleRecipientSelection(index)}
+                            className="rounded border-gray-300"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{index + 1}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{payee.fullName || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{payee.ssnTin || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {(payee as any).issuerEin ? (
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3 text-blue-600" />
+                              <span className="font-medium text-blue-900">
+                                {issuerData.find(i => i.einTin === (payee as any).issuerEin)?.issuerName || 'Unknown'}
+                              </span>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">Not Set</Badge>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{payee.email || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{payee.city || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{payee.state || '-'}</td>
@@ -1295,9 +1705,48 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
                       </tr>
                       {editingIndex === index && (
                         <tr>
-                          <td colSpan={9} className="px-4 py-6 bg-blue-50">
+                          <td colSpan={11} className="px-4 py-6 bg-blue-50">
                             <div className="space-y-6">
                               <h4 className="font-semibold text-gray-900 mb-4">Edit Recipient {index + 1}</h4>
+                              
+                              {/* Issuer Selection */}
+                              <div className="bg-white p-4 rounded-lg border-2 border-blue-300">
+                                <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-blue-600" />
+                                  Select Issuer (Payer) *
+                                </h5>
+                                <Select 
+                                  value={(payee as any).issuerEin || selectedIssuerForPayee}
+                                  onValueChange={(value) => {
+                                    setSelectedIssuerForPayee(value);
+                                    updatePayee(index, "issuerEin" as any, value);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Choose which issuer/payer this recipient belongs to" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {issuerData.length === 0 ? (
+                                      <SelectItem value="none" disabled>No issuers available - Add issuer first</SelectItem>
+                                    ) : (
+                                      issuerData.map((issuer) => (
+                                        <SelectItem key={issuer.einTin} value={issuer.einTin}>
+                                          <div className="flex flex-col">
+                                            <span className="font-semibold">{issuer.issuerName}</span>
+                                            <span className="text-xs text-gray-500">EIN: {issuer.einTin}</span>
+                                          </div>
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                                {(payee as any).issuerEin && (
+                                  <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded flex items-center gap-2">
+                                    <CheckCircle className="h-3 w-3" />
+                                    Linked to: {issuerData.find(i => i.einTin === (payee as any).issuerEin)?.issuerName || 'Unknown Issuer'}
+                                  </div>
+                                )}
+                              </div>
                               
                               {/* Basic Information */}
                               <div>

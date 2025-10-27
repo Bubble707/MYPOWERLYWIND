@@ -6,13 +6,18 @@ import { W9Form } from '@/components/forms/W9Form';
 import { W2Form } from '@/components/forms/W2Form';
 import { FormsSummary } from '@/components/forms/FormsSummary';
 import { FormsIssuer } from '@/components/forms/FormsIssuer';
+import WordPressImports from '@/components/forms/WordPressImports';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, List, Building2 } from 'lucide-react';
+import { ArrowLeft, FileText, List, Building2, ExternalLink, Download } from 'lucide-react';
+import { ImportFromWordPress } from '@/components/forms/ImportFromWordPress';
+import { WordPressImportResponse } from '@shared/api';
 
 export default function FormsHub() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [showWordPressImport, setShowWordPressImport] = useState(false);
+  const [wordpressImportedData, setWordpressImportedData] = useState<any[]>([]);
 
   // Mock stats - replace with real data from your backend
   const mockStats = {
@@ -145,7 +150,7 @@ export default function FormsHub() {
         <div className="max-w-7xl mx-auto">
           {!selectedFormId ? (
             <Tabs defaultValue="issuer" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2 mb-6 bg-gray-100 p-1 rounded-lg">
+              <TabsList className="grid w-full max-w-3xl grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
                 <TabsTrigger value="issuer" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                   <Building2 className="h-4 w-4" />
                   Issuer
@@ -153,6 +158,10 @@ export default function FormsHub() {
                 <TabsTrigger value="summary" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                   <List className="h-4 w-4" />
                   Summary
+                </TabsTrigger>
+                <TabsTrigger value="wordpress" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
+                  <Download className="h-4 w-4" />
+                  WordPress Imports
                 </TabsTrigger>
               </TabsList>
               
@@ -162,6 +171,13 @@ export default function FormsHub() {
               
               <TabsContent value="summary">
                 <FormsSummary />
+              </TabsContent>
+              
+              <TabsContent value="wordpress">
+                <WordPressImports 
+                  importedData={wordpressImportedData}
+                  onOpenImport={() => setShowWordPressImport(true)}
+                />
               </TabsContent>
             </Tabs>
           ) : renderSpecializedForm() || (selectedForm ? (
@@ -177,6 +193,45 @@ export default function FormsHub() {
           ))}
         </div>
       </div>
+
+      {/* WordPress Import Modal */}
+      <ImportFromWordPress
+        open={showWordPressImport}
+        onClose={() => setShowWordPressImport(false)}
+        targetFormType="w9"
+        onImportComplete={(result: WordPressImportResponse) => {
+          console.log('WordPress import completed:', result);
+          if (result.success && result.importedCount > 0) {
+            // In production, fetch actual vendor details from backend using result.importedVendorIds
+            // For now, creating display data based on import result
+            const statuses = ['ACTIVE', 'UNKNOWN'];
+            const pluginSources = ['AffiliateWP', 'WP Affiliate Manager', 'Easy Affiliate'];
+            
+            const newImports = result.importedVendorIds.map((id, index) => ({
+              id,
+              vendorName: `Affiliate ${index + 1}`,
+              email: `affiliate${index + 1}@example.com`,
+              status: statuses[Math.floor(Math.random() * statuses.length)],
+              source: pluginSources[Math.floor(Math.random() * pluginSources.length)],
+              userId: index + 1,
+              paymentInfo: `$${(Math.random() * 100000).toFixed(2)}`,
+              rateCommission: '-',
+              taxId: '-',
+              earnings: Math.random() * 100000,
+              taxWithheld: {
+                fed: Math.random() * 1000,
+                state: Math.random() * 500,
+              },
+              importDate: new Date().toLocaleDateString('en-US', { 
+                year: '2-digit', 
+                month: '2-digit', 
+                day: '2-digit' 
+              }),
+            }));
+            setWordpressImportedData(prev => [...newImports, ...prev]);
+          }
+        }}
+      />
     </div>
   );
 }
