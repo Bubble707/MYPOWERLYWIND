@@ -3,6 +3,11 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleEfileUpload } from "./routes/efile";
+import { 
+  handleTestConnection, 
+  handleFetchAffiliates, 
+  handleImportAffiliates 
+} from "./routes/wordpress";
 
 export function createServer() {
   const app = express();
@@ -22,6 +27,11 @@ export function createServer() {
 
   // E-Filing API
   app.post("/api/efile/upload", handleEfileUpload);
+
+  // WordPress Integration API
+  app.post("/api/wordpress/test-connection", handleTestConnection);
+  app.post("/api/wordpress/fetch-affiliates", handleFetchAffiliates);
+  app.post("/api/wordpress/import", handleImportAffiliates);
 
   return app;
 }

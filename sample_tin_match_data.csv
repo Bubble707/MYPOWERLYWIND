@@ -1,0 +1,11 @@
+Recipient Name,TIN/SSN,Email,Issuer (Payer),Status
+"John Doe","123-45-6789","john.doe@email.com","Acme Corporation","Pending Validation"
+"Jane Smith","234-56-7890","jane.smith@email.com","Tech Solutions LLC","Pending Validation"
+"Robert Johnson","345-67-8901","robert.j@email.com","Acme Corporation","Pending Validation"
+"Emily Davis","456-78-9012","emily.davis@email.com","Tech Solutions LLC","Pending Validation"
+"Michael Chen","567-89-0123","michael.chen@email.com","Global Enterprises","Pending Validation"
+"Sarah Williams","678-90-1234","sarah.w@email.com","Acme Corporation","Pending Validation"
+"David Martinez","789-01-2345","david.martinez@email.com","Tech Solutions LLC","Pending Validation"
+"Lisa Anderson","890-12-3456","lisa.anderson@email.com","Global Enterprises","Pending Validation"
+"James Wilson","901-23-4567","james.wilson@email.com","Acme Corporation","Pending Validation"
+"Maria Garcia","012-34-5678","maria.garcia@email.com","Tech Solutions LLC","Pending Validation"
