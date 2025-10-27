@@ -27,7 +27,7 @@ import {
   PayeeData,
   TransmitterData,
 } from "@shared/api";
-import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2 } from "lucide-react";
+import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2, ExternalLink, Users, Eye, Building2, ShieldCheck, FileDown } from "lucide-react";
 
 const steps = ["Year Selection", "Issuer", "Payee", "E‑Filing", "Success"] as const;
 
@@ -1079,6 +1079,61 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
     setShowFormTypeDialog(true);
   };
 
+  const downloadTinMatchData = (format: 'csv' | 'txt' = 'csv') => {
+    // Filter only recipients with TIN numbers
+    const recipientsWithTin = data.filter(p => p.ssnTin && p.ssnTin.trim() !== '');
+    
+    if (recipientsWithTin.length === 0) {
+      alert('No recipients with TIN numbers found');
+      return;
+    }
+
+    let content = '';
+    let fileExtension = '';
+    let mimeType = '';
+
+    if (format === 'txt') {
+      // Text format - human-readable
+      content = 'TIN MATCH DATA EXPORT\n';
+      content += '='.repeat(60) + '\n\n';
+      content += `Generated: ${new Date().toLocaleString()}\n`;
+      content += `Total Recipients: ${recipientsWithTin.length}\n\n`;
+      content += '='.repeat(60) + '\n\n';
+      
+      recipientsWithTin.forEach((recipient, index) => {
+        content += `${index + 1}. ${recipient.fullName}\n`;
+        content += `   TIN/SSN: ${recipient.ssnTin}\n`;
+        content += `   Email: ${recipient.email}\n`;
+        content += `   Status: Pending Validation\n\n`;
+      });
+      
+      fileExtension = 'txt';
+      mimeType = 'text/plain';
+    } else {
+      // CSV format
+      const headers = 'Recipient Name,TIN/SSN,Email,Status\n';
+      const rows = recipientsWithTin.map(recipient => {
+        return `"${recipient.fullName}","${recipient.ssnTin}","${recipient.email}","Pending Validation"`;
+      }).join('\n');
+      
+      content = headers + rows;
+      fileExtension = 'csv';
+      mimeType = 'text/csv';
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tin_match_data_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    alert(`Downloaded TIN match data for ${recipientsWithTin.length} recipient(s) as ${fileExtension.toUpperCase()}`);
+  };
+
   return (
     <>
       {/* Validation Error Dialog */}
@@ -1224,6 +1279,43 @@ function PayeeForm({ data, onChange }: { data: PayeeData[]; onChange: (data: Pay
           </Button>
         </div>
       </div>
+
+      {/* TIN Match Download Section */}
+      {data.length > 0 && data.filter(p => p.ssnTin).length > 0 && (
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-blue-600" />
+                  TIN Match Data Export
+                </h4>
+                <p className="text-xs text-gray-600">Download TIN data in CSV or TXT format for IRS validation</p>
+                <p className="text-xs text-gray-500 mt-1">{data.filter(p => p.ssnTin).length} recipient(s) with TIN numbers</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => downloadTinMatchData('csv')}
+                  variant="outline"
+                  className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                  size="sm"
+                >
+                  <Download className="h-4 w-4" />
+                  Download CSV
+                </Button>
+                <Button
+                  onClick={() => downloadTinMatchData('txt')}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  Download TXT
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {data.length === 0 ? (
         <Card className="professional-shadow">
