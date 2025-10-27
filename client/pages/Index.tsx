@@ -559,8 +559,29 @@ export default function Index() {
                   
                   <TabsContent value="wordpress">
                     <WordPressImports 
-                      importedData={wordpressImportedData}
-                      onOpenImport={() => setShowWordPressImport(true)}
+                      onImport={(affiliates) => {
+                        // Convert WordPress affiliates to payee data
+                        const newPayees: PayeeData[] = affiliates.map(affiliate => ({
+                          payeeName: affiliate.name || '',
+                          einTin: affiliate.ssn || '',
+                          email: affiliate.email || '',
+                          phone: affiliate.phone || '',
+                          address1: affiliate.address || '',
+                          address2: '',
+                          city: affiliate.city || '',
+                          state: affiliate.state || '',
+                          zip: affiliate.zip || '',
+                          country: 'US',
+                          formType: '1099-NEC',
+                          formData: { box1: affiliate.total_earnings?.toString() || '0' }
+                        }));
+                        setPayeeData([...payeeData, ...newPayees]);
+                        setWordpressImportedData(affiliates);
+                      }}
+                      onClose={() => {
+                        // Close the import view
+                        console.log('WordPress import closed');
+                      }}
                     />
                   </TabsContent>
                 </Tabs>
