@@ -31,7 +31,7 @@ import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash
 import { ImportFromWordPress } from "@/components/forms/ImportFromWordPress";
 import { WordPressImportResponse } from "@shared/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WordPressImports } from "@/components/forms/WordPressImports";
+import WordPressImports from "@/components/forms/WordPressImports";
 import { TinMatchValidation } from "@/components/forms/TinMatchValidation";
 
 const steps = ["Year Selection", "Issuer", "Payee", "TIN Match", "E‑Filing", "Success"] as const;
