@@ -275,7 +275,7 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
         transferType={transferType}
       />
 
-      {/* Header */}
+      {/* Form Requests Section */}
       <Card className="border-blue-200">
         <CardHeader>
           <div className="flex items-center justify-between">

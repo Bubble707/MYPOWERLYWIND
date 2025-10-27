@@ -149,3 +149,172 @@ export function generateAscii(
 export interface DemoResponse {
   message: string;
 }
+
+/**
+ * WordPress Affiliate Import Types
+ */
+
+// WordPress Connection Configuration
+export interface WordPressConnection {
+  id?: string;
+  hostname: string;
+  apiKey?: string;
+  oauthToken?: string;
+  oauthRefreshToken?: string;
+  authType: 'api_key' | 'oauth' | 'none';
+  status: 'connected' | 'disconnected' | 'error';
+  lastConnected?: string;
+  plugin?: 'affiliatewp' | 'easy-affiliate' | 'wp-affiliate-manager' | 'custom';
+}
+
+// WordPress Affiliate Data Structure
+export interface WordPressAffiliate {
+  id: number | string;
+  wpUserId?: number;
+  email: string;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  
+  // Payment details
+  paymentMethod?: string;
+  lastPayoutAmount?: number;
+  totalEarnings?: number;
+  payoutHistory?: PayoutHistoryItem[];
+  
+  // Tax information (optional)
+  ssn?: string;
+  fein?: string;
+  taxClassification?: string;
+  
+  // Address
+  address?: string;
+  address2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  
+  // Custom meta fields
+  meta?: Record<string, any>;
+}
+
+export interface PayoutHistoryItem {
+  id: string | number;
+  amount: number;
+  date: string;
+  status: 'paid' | 'pending' | 'failed';
+  method: string;
+}
+
+// Import Request/Response
+export interface WordPressImportRequest {
+  wpConnection: WordPressConnection;
+  affiliateIds: (string | number)[];
+  importSensitiveFields: boolean; // SSN/FEIN
+  targetFormType: 'w9' | '1099';
+  fieldMapping?: Record<string, string>; // WP field -> our field
+}
+
+export interface WordPressImportResponse {
+  success: boolean;
+  importedCount: number;
+  skippedCount: number;
+  errors: ImportError[];
+  auditLogId?: string;
+  importedVendorIds: string[];
+}
+
+export interface ImportError {
+  affiliateId: string | number;
+  affiliateEmail?: string;
+  error: string;
+  code: 'duplicate' | 'validation' | 'mapping' | 'permission' | 'network';
+}
+
+// WordPress API Response Types
+export interface WordPressApiResponse<T> {
+  success: boolean;
+  data: T;
+  total?: number;
+  page?: number;
+  perPage?: number;
+  error?: string;
+}
+
+export interface WordPressAffiliatesListResponse {
+  affiliates: WordPressAffiliate[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
+}
+
+// Connection Test
+export interface WordPressConnectionTestRequest {
+  hostname: string;
+  apiKey?: string;
+  oauthToken?: string;
+  authType: 'api_key' | 'oauth' | 'none';
+}
+
+export interface WordPressConnectionTestResponse {
+  success: boolean;
+  status: 'connected' | 'error';
+  message: string;
+  detectedPlugin?: string;
+  availableScopes?: string[];
+  affiliateCount?: number;
+}
+
+// Audit Log
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  action: 'wp_import' | 'wp_connection_test' | 'vendor_create' | 'vendor_update';
+  wpSiteHostname?: string;
+  importedIds?: (string | number)[];
+  targetFormType?: 'w9' | '1099';
+  importCount?: number;
+  metadata?: Record<string, any>;
+}
+
+// Vendor Schema (our internal vendor representation)
+export interface VendorData {
+  id?: string;
+  email: string;
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  
+  // Tax info
+  ssn?: string; // encrypted
+  ein?: string; // encrypted
+  taxClassification?: string;
+  
+  // Address
+  address1: string;
+  address2?: string;
+  city: string;
+  state: StateCode;
+  zip: string;
+  country: CountryCode;
+  
+  // Payment
+  paymentMethod?: string;
+  totalPaid?: number;
+  
+  // Source tracking
+  source: 'manual' | 'wordpress' | 'csv' | 'api';
+  wpUserId?: number;
+  wpSiteHostname?: string;
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+  meta?: Record<string, any>;
+}
