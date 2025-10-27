@@ -6,7 +6,7 @@ import { W9Form } from '@/components/forms/W9Form';
 import { W2Form } from '@/components/forms/W2Form';
 import { FormsSummary } from '@/components/forms/FormsSummary';
 import { FormsIssuer } from '@/components/forms/FormsIssuer';
-import { WordPressImports } from '@/components/forms/WordPressImports';
+import WordPressImports from '@/components/forms/WordPressImports';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, List, Building2, ExternalLink, Download } from 'lucide-react';
