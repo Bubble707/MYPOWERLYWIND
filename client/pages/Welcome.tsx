@@ -9,7 +9,7 @@ export default function Welcome() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const handleForm1099 = () => {
-    navigate('/');
+    navigate('/1099');
   };
 
   const handleFormW9 = () => {
@@ -103,40 +103,50 @@ export default function Welcome() {
 
           {/* News & Alerts Sidebar */}
           <div className="lg:border-l-2 lg:border-gray-200 lg:pl-12">
-            <Card className="sticky top-8 shadow-lg border-2 border-blue-100 bg-white animate-fade-in-delayed overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <div className="flex items-center gap-3 text-white">
-                  <Bell className="h-5 w-5" />
-                  <h2 className="text-xl font-bold">
+            <Card className="sticky top-8 shadow-xl border-2 border-gray-200 bg-white animate-fade-in-delayed overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+              <div className="bg-white border-b-2 border-gray-100 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50">
+                    <Bell className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-blue-600">
                     News & Alerts
                   </h2>
                 </div>
               </div>
               
-              <CardContent className="p-6">
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200 hover:bg-green-100 transition-colors">
-                    <Calendar className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">Tax year 2024 is now available.</p>
+              <CardContent className="p-6 bg-gradient-to-b from-white to-gray-50/30">
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-green-50 to-green-100/50 border-2 border-green-200 hover:border-green-300 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                    <div className="p-1.5 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                      <Calendar className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900 leading-relaxed">Tax year 2024 is now available.</p>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors">
-                    <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">You can e-file prior years until Nov. 23, 2024.</p>
+                  <li className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100/50 border-2 border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                    <div className="p-1.5 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900 leading-relaxed">You can e-file prior years until Nov. 23, 2024.</p>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">
-                    <Bell className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">Postal Mail service begins in Jan.</p>
+                  <li className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100/50 border-2 border-amber-200 hover:border-amber-300 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                    <div className="p-1.5 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                      <Bell className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900 leading-relaxed">Postal Mail service begins in Jan.</p>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3 p-4 rounded-lg bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors">
-                    <Shield className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">2-Step Verification for login is available.</p>
+                  <li className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100/50 border-2 border-purple-200 hover:border-purple-300 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                    <div className="p-1.5 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                      <Shield className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900 leading-relaxed">2-Step Verification for login is available.</p>
                     </div>
                   </li>
                 </ul>

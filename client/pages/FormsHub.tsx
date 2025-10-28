@@ -6,7 +6,7 @@ import { W9Form } from '@/components/forms/W9Form';
 import { W2Form } from '@/components/forms/W2Form';
 import { FormsSummary } from '@/components/forms/FormsSummary';
 import { FormsIssuer } from '@/components/forms/FormsIssuer';
-import WordPressImports from '@/components/forms/WordPressImports';
+import { WordPressImportsTab } from '@/components/forms/WordPressImportsTab';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, List, Building2, ExternalLink, Download } from 'lucide-react';
@@ -15,9 +15,12 @@ import { WordPressImportResponse } from '@shared/api';
 
 export default function FormsHub() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<any>({});
   const [showWordPressImport, setShowWordPressImport] = useState(false);
   const [wordpressImportedData, setWordpressImportedData] = useState<any[]>([]);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('issuer');
 
   // Mock stats - replace with real data from your backend
   const mockStats = {
@@ -135,14 +138,6 @@ export default function FormsHub() {
             >
               W-9
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
-              onClick={() => {/* Settings functionality */}}
-            >
-              <FileText className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </header>
@@ -150,7 +145,7 @@ export default function FormsHub() {
       <div className="container py-6">
         <div className="max-w-7xl mx-auto">
           {!selectedFormId ? (
-            <Tabs defaultValue="issuer" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full max-w-3xl grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
                 <TabsTrigger value="issuer" className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200">
                   <Building2 className="h-4 w-4" />
@@ -171,13 +166,52 @@ export default function FormsHub() {
               </TabsContent>
               
               <TabsContent value="summary">
-                <FormsSummary />
+                <FormsSummary showSuccessAlert={showSuccessAlert} successMessage={successMessage} onDismissAlert={() => setShowSuccessAlert(false)} />
               </TabsContent>
               
               <TabsContent value="wordpress">
-                <WordPressImports 
+                <WordPressImportsTab
                   importedData={wordpressImportedData}
-                  onOpenImport={() => setShowWordPressImport(true)}
+                  onImport={(affiliates) => {
+                    // Convert WordPress affiliates to display data
+                    const statuses = ['ACTIVE', 'UNKNOWN'];
+                    const pluginSources = ['AffiliateWP', 'WP Affiliate Manager', 'Easy Affiliate'];
+                    
+                    const newImports = affiliates.map((affiliate, index) => ({
+                      id: affiliate.id || Date.now() + index,
+                      vendorName: affiliate.fullName || affiliate.name || `Affiliate ${index + 1}`,
+                      email: affiliate.email || `affiliate${index + 1}@example.com`,
+                      status: statuses[Math.floor(Math.random() * statuses.length)],
+                      source: pluginSources[Math.floor(Math.random() * pluginSources.length)],
+                      userId: affiliate.id || index + 1,
+                      paymentInfo: affiliate.amount ? `$${affiliate.amount.toFixed(2)}` : '-',
+                      rateCommission: '-',
+                      taxId: affiliate.ssnTin || '-',
+                      earnings: affiliate.amount || 0,
+                      taxWithheld: {
+                        fed: affiliate.federalTaxWithheld || 0,
+                        state: Math.random() * 500,
+                      },
+                      importDate: new Date().toLocaleDateString('en-US', { 
+                        year: '2-digit', 
+                        month: '2-digit', 
+                        day: '2-digit' 
+                      }),
+                    }));
+                    setWordpressImportedData(prev => [...newImports, ...prev]);
+                    
+                    // Show success message
+                    setSuccessMessage(`Successfully imported ${affiliates.length} affiliate${affiliates.length > 1 ? 's' : ''} from WordPress`);
+                    setShowSuccessAlert(true);
+                    
+                    // Auto-hide alert after 5 seconds
+                    setTimeout(() => {
+                      setShowSuccessAlert(false);
+                    }, 5000);
+                  }}
+                  onDelete={(ids) => {
+                    setWordpressImportedData(prev => prev.filter(item => !ids.includes(item.id)));
+                  }}
                 />
               </TabsContent>
             </Tabs>

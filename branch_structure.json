@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "kinza",
+    "kinza-muzamil",
+    "main",
+    "muzamil",
+    "origin",
+    "shaista",
+    "shaista-kinza",
+    "shaista-muzamil"
+  ],
+  "parent": {
+    "kinza": "main",
+    "kinza-muzamil": "kinza",
+    "main": null,
+    "muzamil": "main",
+    "origin": "main",
+    "shaista": "main",
+    "shaista-kinza": "shaista",
+    "shaista-muzamil": "shaista"
+  },
+  "order": [
+    "main",
+    "kinza",
+    "muzamil",
+    "origin",
+    "shaista",
+    "kinza-muzamil",
+    "shaista-kinza",
+    "shaista-muzamil"
+  ]
+}
