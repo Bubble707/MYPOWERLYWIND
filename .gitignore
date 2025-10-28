@@ -21,7 +21,6 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Local env files
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -30,10 +29,10 @@ yarn-error.log*
 .vite/
 
 # Editor directories
-.vscode/
 .idea/
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
+config.bat

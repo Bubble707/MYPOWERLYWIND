@@ -116,6 +116,7 @@ export function SendNewRequestModal({ open, onClose }: SendNewRequestModalProps)
   const [selectedIssuer, setSelectedIssuer] = useState<string>('');
   const [formType, setFormType] = useState<'blank' | 'prefilled'>('blank');
   const [collectPaymentDetails, setCollectPaymentDetails] = useState(false);
+  const [collectPaymentDetailsBlank, setCollectPaymentDetailsBlank] = useState(false);
   const [recipients, setRecipients] = useState<Recipient[]>([{ vendorName: '', email: '' }]);
   const [prefilledData, setPrefilledData] = useState<PrefilledFormData>({
     name: '',
@@ -480,6 +481,36 @@ export function SendNewRequestModal({ open, onClose }: SendNewRequestModalProps)
                         The form will be pre-filled with issuer information. Recipients only need to review and sign.
                       </AlertDescription>
                     </Alert>
+                  )}
+                  {formType === 'blank' && (
+                    <Card className="border-blue-200 bg-blue-50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="collect-payment-blank"
+                            checked={collectPaymentDetailsBlank}
+                            onCheckedChange={(checked) => setCollectPaymentDetailsBlank(checked as boolean)}
+                          />
+                          <div className="flex items-center gap-2 flex-1">
+                            <CreditCard className="h-5 w-5 text-blue-600" />
+                            <Label
+                              htmlFor="collect-payment-blank"
+                              className="text-base font-semibold text-blue-900 cursor-pointer"
+                            >
+                              Collect Payment Details (Optional)
+                            </Label>
+                          </div>
+                        </div>
+                        {collectPaymentDetailsBlank && (
+                          <Alert className="bg-blue-100 border-blue-300 mt-3">
+                            <AlertCircle className="h-4 w-4 text-blue-700" />
+                            <AlertDescription className="text-blue-900 text-sm">
+                              Payment details collection will be included in the blank form request.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               </CardContent>
