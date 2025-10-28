@@ -8,6 +8,7 @@ import {
   handleFetchAffiliates, 
   handleImportAffiliates 
 } from "./routes/wordpress";
+import { handleExtensionRequest, handleGetExtensionRequests } from "./routes/extension-request";
 
 export function createServer() {
   const app = express();
@@ -32,6 +33,10 @@ export function createServer() {
   app.post("/api/wordpress/test-connection", handleTestConnection);
   app.post("/api/wordpress/fetch-affiliates", handleFetchAffiliates);
   app.post("/api/wordpress/import", handleImportAffiliates);
+
+  // IRS Extension Request API
+  app.post("/api/extension-request", handleExtensionRequest);
+  app.get("/api/extension-requests", handleGetExtensionRequests);
 
   return app;
 }

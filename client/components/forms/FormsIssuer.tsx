@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,8 +26,10 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Building2
+  Building2,
+  Search
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Issuer {
   id: string;
@@ -108,6 +111,8 @@ export function FormsIssuer() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingIssuer, setEditingIssuer] = useState<Issuer | null>(null);
   const [formData, setFormData] = useState<Partial<Issuer>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIssuerIds, setSelectedIssuerIds] = useState<Set<string>>(new Set());
 
   const handleAdd = () => {
     setFormData({});
@@ -122,9 +127,56 @@ export function FormsIssuer() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this issuer?')) {
-      setIssuers(issuers.filter(i => i.id !== id));
+    if (window.confirm('Are you sure you want to delete this issuer?')) {
+      setIssuers(issuers.filter(issuer => issuer.id !== id));
     }
+  };
+
+  const toggleIssuerSelection = (id: string) => {
+    const newSelected = new Set(selectedIssuerIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIssuerIds(newSelected);
+  };
+
+  const toggleAllIssuers = () => {
+    if (selectedIssuerIds.size === filteredIssuers.length && filteredIssuers.length > 0) {
+      setSelectedIssuerIds(new Set());
+    } else {
+      setSelectedIssuerIds(new Set(filteredIssuers.map(i => i.id)));
+    }
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedIssuers = issuers.filter(i => selectedIssuerIds.has(i.id));
+    const csvContent = [
+      'Business Name,EIN/TIN,Contact Name,Email,Phone,City,State',
+      ...selectedIssuers.map(i => 
+        `${i.businessName},${i.einTin},${i.contactName},${i.email},${i.phone},${i.city},${i.state}`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issuers_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    setSelectedIssuerIds(new Set());
+  };
+
+  const handleBulkExportPDF = () => {
+    alert(`PDF export for ${selectedIssuerIds.size} issuers coming soon!`);
+    setSelectedIssuerIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    setIssuers(issuers.filter(i => !selectedIssuerIds.has(i.id)));
+    setSelectedIssuerIds(new Set());
   };
 
   const handleSave = () => {
@@ -191,6 +243,16 @@ export function FormsIssuer() {
     reader.readAsText(file);
   };
 
+  // Filter issuers based on search query
+  const filteredIssuers = issuers.filter(issuer => {
+    const query = searchQuery.toLowerCase();
+    return (
+      issuer.businessName.toLowerCase().includes(query) ||
+      issuer.email.toLowerCase().includes(query) ||
+      issuer.einTin.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -198,6 +260,31 @@ export function FormsIssuer() {
         <h2 className="text-3xl font-bold">Issuer</h2>
         <p className="text-gray-600 mt-1">Enter your business information as the issuer</p>
       </div>
+
+      {/* Search Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search issuers by name, email, or EIN/TIN..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedIssuerIds.size}
+        totalCount={filteredIssuers.length}
+        onExportCSV={handleBulkExportCSV}
+        onExportPDF={handleBulkExportPDF}
+        onDelete={handleBulkDelete}
+        entityName="issuer"
+      />
 
       {/* Issuer Information Card */}
       <Card>
@@ -240,41 +327,60 @@ export function FormsIssuer() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border">
+          <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-blue-50 border-b-2 border-blue-200">
-                  <TableHead className="w-12 font-semibold text-blue-900">#</TableHead>
-                  <TableHead className="font-semibold text-blue-900">BUSINESS NAME</TableHead>
-                  <TableHead className="font-semibold text-blue-900">EIN/TIN</TableHead>
-                  <TableHead className="font-semibold text-blue-900">CONTACT NAME</TableHead>
-                  <TableHead className="font-semibold text-blue-900">EMAIL</TableHead>
-                  <TableHead className="font-semibold text-blue-900">PHONE</TableHead>
-                  <TableHead className="font-semibold text-blue-900">CITY</TableHead>
-                  <TableHead className="font-semibold text-blue-900">STATE</TableHead>
-                  <TableHead className="text-right font-semibold text-blue-900">ACTIONS</TableHead>
+                <TableRow className="bg-gradient-to-r from-blue-50 to-blue-100/80 border-b-2 border-blue-200 hover:from-blue-100 hover:to-blue-100 transition-colors">
+                  <TableHead className="w-16 pl-6">
+                    <Checkbox
+                      checked={selectedIssuerIds.size === filteredIssuers.length && filteredIssuers.length > 0}
+                      onCheckedChange={toggleAllIssuers}
+                    />
+                  </TableHead>
+                  <TableHead className="w-16 font-bold text-blue-900 text-xs uppercase tracking-wide">#</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">Business Name</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">EIN/TIN</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">Contact Name</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">Email</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">Phone</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">City</TableHead>
+                  <TableHead className="font-bold text-blue-900 text-xs uppercase tracking-wide">State</TableHead>
+                  <TableHead className="text-right font-bold text-blue-900 text-xs uppercase tracking-wide pr-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {issuers.map((issuer, index) => (
-                  <TableRow key={issuer.id} className="hover:bg-blue-50 transition-colors duration-150">
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-medium">{issuer.businessName}</TableCell>
-                    <TableCell className="font-mono text-sm">{issuer.einTin}</TableCell>
-                    <TableCell>{issuer.contactName}</TableCell>
-                    <TableCell className="text-blue-600">{issuer.email}</TableCell>
-                    <TableCell>{issuer.phone}</TableCell>
-                    <TableCell>{issuer.city}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{issuer.state}</Badge>
+                {filteredIssuers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                      {searchQuery ? `No issuers found matching "${searchQuery}"` : 'No issuers added yet'}
                     </TableCell>
-                    <TableCell className="text-right">
+                  </TableRow>
+                ) : (
+                  filteredIssuers.map((issuer, index) => (
+                  <TableRow key={issuer.id} className="border-b border-gray-100 hover:bg-blue-50/50 transition-all duration-200 group">
+                    <TableCell className="pl-6">
+                      <Checkbox
+                        checked={selectedIssuerIds.has(issuer.id)}
+                        onCheckedChange={() => toggleIssuerSelection(issuer.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-semibold text-gray-600 text-sm">{index + 1}</TableCell>
+                    <TableCell className="font-semibold text-gray-900">{issuer.businessName}</TableCell>
+                    <TableCell className="font-mono text-sm text-gray-700">{issuer.einTin}</TableCell>
+                    <TableCell className="text-gray-800">{issuer.contactName}</TableCell>
+                    <TableCell className="text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">{issuer.email}</TableCell>
+                    <TableCell className="text-gray-700">{issuer.phone}</TableCell>
+                    <TableCell className="text-gray-700">{issuer.city}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50 px-2.5 py-0.5 font-medium">{issuer.state}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(issuer)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:shadow-md transition-all duration-200 font-semibold"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 hover:shadow-sm transition-all duration-200 font-semibold px-4"
                         >
                           Edit
                         </Button>
@@ -282,14 +388,15 @@ export function FormsIssuer() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(issuer.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:shadow-md transition-all duration-200"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:shadow-sm transition-all duration-200"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

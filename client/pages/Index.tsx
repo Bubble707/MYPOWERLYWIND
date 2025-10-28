@@ -21,18 +21,28 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   generateAscii,
   IssuerData,
   PayeeData,
   TransmitterData,
 } from "@shared/api";
-import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2, ExternalLink, Users, Eye, Building2, ShieldCheck, FileDown } from "lucide-react";
+import { CheckCircle, Upload, FileText, AlertCircle, CreditCard, Download, Trash2, ExternalLink, Users, Eye, Building2, ShieldCheck, FileDown, Calendar, Info, MoreVertical, Edit, Pen } from "lucide-react";
 import { ImportFromWordPress } from "@/components/forms/ImportFromWordPress";
 import { WordPressImportResponse } from "@shared/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WordPressImports from "@/components/forms/WordPressImports";
 import { TinMatchValidation } from "@/components/forms/TinMatchValidation";
+import { RequestExtensionModal } from "@/components/forms/RequestExtensionModal";
+import { BulkActionsBar } from "@/components/BulkActionsBar";
 
 const steps = ["Year Selection", "Issuer", "Payee", "TIN Match", "E‑Filing", "Success"] as const;
 
@@ -332,6 +342,7 @@ export default function Index() {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [wordpressImportedData, setWordpressImportedData] = useState<any[]>([]);
   const [tinValidationResults, setTinValidationResults] = useState<any[]>([]);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
 
   const progress = useMemo(() => Math.round(((step + 1) / steps.length) * 100), [step]);
 
@@ -416,8 +427,8 @@ export default function Index() {
                 <p className="text-gray-500 text-sm">Professional 1099 Processing</p>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {step > 0 && (
                   <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold px-4 py-1.5 text-sm">
                     📅 Tax Year: {selectedYear}
@@ -430,7 +441,7 @@ export default function Index() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="ml-auto text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
                 <FileText className="h-5 w-5" />
               </Button>
@@ -534,7 +545,14 @@ export default function Index() {
             </CardHeader>
             <CardContent className="space-y-6">
               {step === 0 && <YearSelectionStep year={selectedYear} onChange={setSelectedYear} />}
-              {step === 1 && <IssuerForm data={issuerData} onChange={setIssuerData} />}
+              {step === 1 && (
+                <IssuerForm 
+                  data={issuerData} 
+                  onChange={setIssuerData}
+                  onRequestExtension={() => setShowExtensionModal(true)}
+                  taxYear={selectedYear}
+                />
+              )}
               {step === 2 && (
                 <Tabs defaultValue="manual" className="w-full">
                   <TabsList className="grid w-full max-w-md grid-cols-2 mb-6 bg-gray-100 p-1 rounded-lg">
@@ -674,43 +692,45 @@ export default function Index() {
         onImportComplete={(result: WordPressImportResponse) => {
           console.log('WordPress import completed:', result);
           if (result.success && result.importedCount > 0) {
-            // In production, fetch actual vendor details from backend using result.importedVendorIds
-            // For now, creating display data based on import result
-            const statuses = ['ACTIVE', 'UNKNOWN'];
-            const pluginSources = ['AffiliateWP', 'WP Affiliate Manager', 'Easy Affiliate'];
-            
-            const newImports = result.importedVendorIds.map((id, index) => ({
-              id,
-              vendorName: `Affiliate ${index + 1}`,
-              email: `affiliate${index + 1}@example.com`,
-              status: statuses[Math.floor(Math.random() * statuses.length)],
-              source: pluginSources[Math.floor(Math.random() * pluginSources.length)],
-              userId: index + 1,
-              paymentInfo: `$${(Math.random() * 100000).toFixed(2)}`,
-              rateCommission: '-',
-              taxId: '-',
-              earnings: Math.random() * 100000,
-              taxWithheld: {
-                fed: Math.random() * 1000,
-                state: Math.random() * 500,
-              },
-              importDate: new Date().toLocaleDateString('en-US', { 
-                year: '2-digit', 
-                month: '2-digit', 
-                day: '2-digit' 
-              }),
-            }));
-            setWordpressImportedData(prev => [...newImports, ...prev]);
+            // Optionally refresh or update the UI
+            alert(`Successfully imported ${result.importedCount} affiliates from WordPress`);
           }
         }}
+      />
+      
+      <RequestExtensionModal
+        open={showExtensionModal}
+        onClose={() => setShowExtensionModal(false)}
+        taxYear={selectedYear}
+        payerInfo={issuerData.length > 0 ? {
+          name: issuerData[0].issuerName,
+          ein: issuerData[0].einTin,
+          address: issuerData[0].address1,
+          city: issuerData[0].city,
+          state: issuerData[0].state,
+          zip: issuerData[0].zip,
+        } : undefined}
       />
     </div>
   );
 }
 
 // Issuer Form Component - Table Format
-function IssuerForm({ data, onChange }: { data: IssuerData[]; onChange: (data: IssuerData[]) => void }) {
+function IssuerForm({ 
+  data, 
+  onChange, 
+  onRequestExtension, 
+  taxYear 
+}: { 
+  data: IssuerData[]; 
+  onChange: (data: IssuerData[]) => void;
+  onRequestExtension?: () => void;
+  taxYear?: string;
+}) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [selectedIssuerIds, setSelectedIssuerIds] = useState<Set<number>>(new Set());
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const addIssuer = () => {
     const newIssuer: IssuerData = {
@@ -731,6 +751,33 @@ function IssuerForm({ data, onChange }: { data: IssuerData[]; onChange: (data: I
     setEditingIndex(data.length); // Start editing the new issuer
   };
 
+  const saveIssuer = (index: number) => {
+    const issuer = data[index];
+    // Basic validation
+    if (!issuer.issuerName || !issuer.einTin || !issuer.contactName) {
+      alert("Please fill in all required fields (Business Name, EIN/TIN, Contact Name)");
+      return;
+    }
+    
+    setEditingIndex(null);
+    setSuccessMessage(`Issuer "${issuer.issuerName}" saved successfully!`);
+    setShowSuccessAlert(true);
+    
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => {
+      setShowSuccessAlert(false);
+    }, 5000);
+  };
+
+  const cancelEdit = (index: number) => {
+    // If it's a new issuer (empty fields), remove it
+    const issuer = data[index];
+    if (!issuer.issuerName && !issuer.einTin) {
+      onChange(data.filter((_, i) => i !== index));
+    }
+    setEditingIndex(null);
+  };
+
   const updateIssuer = (index: number, field: keyof IssuerData, value: string) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
@@ -740,6 +787,54 @@ function IssuerForm({ data, onChange }: { data: IssuerData[]; onChange: (data: I
   const removeIssuer = (index: number) => {
     onChange(data.filter((_, i) => i !== index));
     if (editingIndex === index) setEditingIndex(null);
+  };
+
+  const toggleIssuerSelection = (index: number) => {
+    const newSelected = new Set(selectedIssuerIds);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedIssuerIds(newSelected);
+  };
+
+  const toggleAllIssuers = () => {
+    if (selectedIssuerIds.size === data.length && data.length > 0) {
+      setSelectedIssuerIds(new Set());
+    } else {
+      setSelectedIssuerIds(new Set(data.map((_, i) => i)));
+    }
+  };
+
+  const handleBulkExportCSV = () => {
+    const selectedData = data.filter((_, i) => selectedIssuerIds.has(i));
+    const csvContent = [
+      'Business Name,EIN/TIN,Contact Name,Email,Phone,Business Type,Address,City,State,ZIP,Country',
+      ...selectedData.map(issuer => 
+        `${issuer.issuerName},${issuer.einTin},${issuer.contactName},${issuer.email},${issuer.phone},${issuer.businessType},${issuer.address1},${issuer.city},${issuer.state},${issuer.zip},${issuer.country}`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issuers_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    setSelectedIssuerIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    const newData = data.filter((_, i) => !selectedIssuerIds.has(i));
+    onChange(newData);
+    setSelectedIssuerIds(new Set());
+  };
+
+  const handleBulkSendReminder = () => {
+    alert(`Reminder functionality coming soon!\nWould send reminders to ${selectedIssuerIds.size} issuer(s)`);
+    setSelectedIssuerIds(new Set());
   };
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -808,6 +903,34 @@ Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901
 
   return (
     <div className="space-y-6">
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <Alert className="bg-green-50 border-green-200 animate-fade-in">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-900">
+            {successMessage}
+          </AlertDescription>
+          <button
+            onClick={() => setShowSuccessAlert(false)}
+            className="absolute top-3 right-3 text-green-600 hover:text-green-700"
+          >
+            ×
+          </button>
+        </Alert>
+      )}
+
+      {/* Bulk Actions Bar */}
+      {selectedIssuerIds.size > 0 && (
+        <BulkActionsBar
+          selectedCount={selectedIssuerIds.size}
+          totalCount={data.length}
+          onExportCSV={handleBulkExportCSV}
+          onExportPDF={() => alert('PDF export coming soon!')}
+          onDelete={handleBulkDelete}
+          entityName="issuer"
+        />
+      )}
+
       {/* Header Section - Only Top Buttons */}
       <div className="flex items-center justify-between">
         <div>
@@ -858,25 +981,37 @@ Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901
         <Card className="professional-shadow-lg">
           <CardContent className="p-0">
             {/* Table View */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gradient-to-r from-blue-50 to-blue-100/80 border-b-2 border-blue-200">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EIN/TIN</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left w-16">
+                      <Checkbox
+                        checked={selectedIssuerIds.size === data.length && data.length > 0}
+                        onCheckedChange={toggleAllIssuers}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left w-16 text-xs font-bold text-blue-900 uppercase tracking-wide">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Business Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">EIN/TIN</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Contact Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">City</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">State</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-blue-900 uppercase tracking-wide w-20 pr-6">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {data.map((issuer, index) => (
                     <>
-                      <tr key={index} className="hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+                      <tr key={index} className="hover:bg-blue-50/50 transition-all duration-200 cursor-pointer border-b border-gray-100 group">
+                        <td className="px-6 py-3">
+                          <Checkbox
+                            checked={selectedIssuerIds.has(index)}
+                            onCheckedChange={() => toggleIssuerSelection(index)}
+                          />
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{index + 1}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{issuer.issuerName || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{issuer.einTin || '-'}</td>
@@ -885,30 +1020,47 @@ Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901
                         <td className="px-4 py-3 text-sm text-gray-900">{issuer.phone || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{issuer.city || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{issuer.state || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingIndex(editingIndex === index ? null : index)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            >
-                              {editingIndex === index ? 'Close' : 'Edit'}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeIssuer(index)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                              >
+                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => onRequestExtension && onRequestExtension(issuer)}
+                                className="cursor-pointer"
+                              >
+                                <Calendar className="h-4 w-4 mr-2 text-blue-600" />
+                                <span>Request Extension</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setEditingIndex(editingIndex === index ? null : index)}
+                                className="cursor-pointer"
+                              >
+                                <Pen className="h-4 w-4 mr-2 text-gray-600" />
+                                <span>{editingIndex === index ? 'Close Edit' : 'Edit'}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => removeIssuer(index)}
+                                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                       {editingIndex === index && (
                         <tr>
-                          <td colSpan={9} className="px-4 py-6 bg-blue-50">
+                          <td colSpan={11} className="px-4 py-6 bg-blue-50">
                             <div className="space-y-4">
                               <h4 className="font-semibold text-gray-900 mb-4">Edit Issuer {index + 1}</h4>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1016,6 +1168,24 @@ Freelance Services,11-2233445,Charlie Brown,charlie@freelance.com,(555) 567-8901
                                   />
                                 </Field>
                               </div>
+                              
+                              {/* Add/Cancel Buttons */}
+                              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-blue-200">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => cancelEdit(index)}
+                                  className="border-gray-300 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => saveIssuer(index)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Save Issuer
+                                </Button>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1051,6 +1221,9 @@ function PayeeForm({
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [selectedIssuerForPayee, setSelectedIssuerForPayee] = useState<string>("");
   const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
+  const [selectedPayeeIds, setSelectedPayeeIds] = useState<Set<number>>(new Set());
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   
   // Extended payee type with issuer tracking
   type ExtendedPayeeData = PayeeData & { issuerEin?: string };
@@ -1075,6 +1248,33 @@ function PayeeForm({
     setEditingIndex(data.length); // Start editing the new payee
   };
 
+  const savePayee = (index: number) => {
+    const payee = data[index];
+    // Basic validation
+    if (!payee.fullName || !payee.ssnTin || !payee.email) {
+      alert("Please fill in all required fields (Recipient Name, SSN/TIN, Email)");
+      return;
+    }
+    
+    setEditingIndex(null);
+    setSuccessMessage(`Payee "${payee.fullName}" saved successfully!`);
+    setShowSuccessAlert(true);
+    
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => {
+      setShowSuccessAlert(false);
+    }, 5000);
+  };
+
+  const cancelEditPayee = (index: number) => {
+    // If it's a new payee (empty fields), remove it
+    const payee = data[index];
+    if (!payee.fullName && !payee.ssnTin) {
+      onChange(data.filter((_, i) => i !== index));
+    }
+    setEditingIndex(null);
+  };
+
   const updatePayee = (index: number, field: keyof PayeeData, value: any) => {
     const updated = [...data];
     updated[index] = { ...updated[index], [field]: value };
@@ -1084,6 +1284,92 @@ function PayeeForm({
   const removePayee = (index: number) => {
     onChange(data.filter((_, i) => i !== index));
     if (editingIndex === index) setEditingIndex(null);
+  };
+
+  // Bulk action handlers
+  const togglePayeeSelection = (index: number) => {
+    const newSelected = new Set(selectedPayeeIds);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedPayeeIds(newSelected);
+  };
+
+  const toggleAllPayees = () => {
+    if (selectedPayeeIds.size === data.length && data.length > 0) {
+      setSelectedPayeeIds(new Set());
+    } else {
+      setSelectedPayeeIds(new Set(data.map((_, i) => i)));
+    }
+  };
+
+  const handleBulkExportCSV = () => {
+    try {
+      if (selectedPayeeIds.size === 0) {
+        alert('⚠️ Please select at least one payee before exporting.');
+        return;
+      }
+
+      const selectedData = data.filter((_, i) => selectedPayeeIds.has(i));
+      const csvContent = [
+        'Recipient Name,SSN/TIN,Email,Address,City,State,ZIP,Amount,Tax Withheld',
+        ...selectedData.map(payee => 
+          `${payee.fullName},${payee.ssnTin},${payee.email},${payee.address1},${payee.city},${payee.state},${payee.zip},${payee.amount},${payee.federalTaxWithheld}`
+        )
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payees_export_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      // Show success message
+      setSuccessMessage(`✅ Export completed successfully! ${selectedPayeeIds.size} payee(s) exported to CSV.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 5000);
+      
+      setSelectedPayeeIds(new Set());
+    } catch (error) {
+      alert('❌ Error exporting CSV. Please try again.');
+      console.error('Export error:', error);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    try {
+      if (selectedPayeeIds.size === 0) {
+        alert('⚠️ Please select at least one payee before deleting.');
+        return;
+      }
+
+      const count = selectedPayeeIds.size;
+      const newData = data.filter((_, i) => !selectedPayeeIds.has(i));
+      onChange(newData);
+      
+      // Show success message
+      setSuccessMessage(`✅ Selected payees deleted successfully! ${count} payee(s) removed.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 5000);
+      
+      setSelectedPayeeIds(new Set());
+    } catch (error) {
+      alert('❌ Error deleting payees. Please try again.');
+      console.error('Delete error:', error);
+    }
+  };
+
+  const handleBulkSendReminder = () => {
+    if (selectedPayeeIds.size === 0) {
+      alert('⚠️ Please select at least one payee before sending reminders.');
+      return;
+    }
+    alert(`📧 Reminder functionality coming soon!\nWould send reminders to ${selectedPayeeIds.size} payee(s)`);
+    setSelectedPayeeIds(new Set());
   };
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1456,150 +1742,123 @@ function PayeeForm({
       )}
 
       <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Recipient Information</h3>
-            <p className="text-sm text-gray-600">Add payee details one by one or upload via CSV</p>
-          </div>
-          <div className="flex gap-2">
-          <Button 
-            onClick={downloadSampleCSV} 
-            variant="outline"
-            className="border-green-600 text-green-600 hover:bg-green-50 hover:shadow-md hover:scale-105 transition-all duration-200"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Sample CSV
-          </Button>
-          <Button 
-            onClick={() => document.getElementById('payee-csv-upload')?.click()} 
-            variant="outline"
-            className="border-blue-600 text-blue-600 hover:bg-blue-50 hover:shadow-md hover:scale-105 transition-all duration-200"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload CSV
-          </Button>
-          <input
-            id="payee-csv-upload"
-            type="file"
-            accept=".csv"
-            onChange={handleCSVUpload}
-            className="hidden"
-          />
-          <Button onClick={addPayee} className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-semibold">
-            Add Recipient
-          </Button>
-        </div>
-      </div>
-      
-      {/* PDF Download Options */}
-      {data.length > 0 && (
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-          <CardContent className="p-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-600" />
-                    Download Options
-                  </h4>
-                  <p className="text-xs text-gray-600">Download filled PDF forms, TIN data, or blank IRS forms</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => downloadPDFs('selected', data)}
-                    disabled={selectedRecipients.length === 0}
-                    variant="outline"
-                    className="gap-2 border-purple-600 text-purple-600 hover:bg-purple-50"
-                    size="sm"
-                  >
-                    <Download className="h-4 w-4" />
-                    Selected PDFs ({selectedRecipients.length})
-                  </Button>
-                  <Button
-                    onClick={() => downloadPDFs('all', data)}
-                    className="gap-2 bg-purple-600 hover:bg-purple-700"
-                    size="sm"
-                  >
-                    <FileDown className="h-4 w-4" />
-                    All PDFs ({data.length})
-                  </Button>
-                  <Button
-                    onClick={() => setShowFormTypeDialog(true)}
-                    variant="outline"
-                    className="gap-2 border-orange-600 text-orange-600 hover:bg-orange-50"
-                    size="sm"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Blank IRS Forms
-                  </Button>
-                </div>
-              </div>
-              
-              {/* TIN Match Download Section */}
-              <div className="pt-2 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-blue-600" />
-                      TIN Match Data Export
-                    </h4>
-                    <p className="text-xs text-gray-600">Download in CSV or TXT format for IRS validation</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
-                    {data.filter(p => p.ssnTin).length} recipient(s) with TIN
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      onClick={() => downloadTinMatchData('all', 'csv')}
-                      variant="outline"
-                      className="gap-1 border-blue-600 text-blue-600 hover:bg-blue-50"
-                      size="sm"
-                    >
-                      <Download className="h-3 w-3" />
-                      CSV
-                    </Button>
-                    <Button
-                      onClick={() => downloadTinMatchData('all', 'txt')}
-                      className="gap-1 bg-blue-600 hover:bg-blue-700"
-                      size="sm"
-                    >
-                      <FileText className="h-3 w-3" />
-                      TXT
-                    </Button>
-                    {selectedRecipients.length > 0 && (
-                      <>
-                        <div className="border-l border-gray-300 mx-1"></div>
-                        <Button
-                          onClick={() => downloadTinMatchData('selected', 'csv')}
-                          variant="outline"
-                          className="gap-1 border-green-600 text-green-600 hover:bg-green-50"
-                          size="sm"
-                        >
-                          <Download className="h-3 w-3" />
-                          Selected CSV ({selectedRecipients.length})
-                        </Button>
-                        <Button
-                          onClick={() => downloadTinMatchData('selected', 'txt')}
-                          variant="outline"
-                          className="gap-1 border-green-600 text-green-600 hover:bg-green-50"
-                          size="sm"
-                        >
-                          <FileText className="h-3 w-3" />
-                          Selected TXT ({selectedRecipients.length})
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Success Alert */}
+        {showSuccessAlert && (
+          <Alert className="bg-green-50 border-green-200 animate-fade-in">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-900">
+              {successMessage}
+            </AlertDescription>
+            <button
+              onClick={() => setShowSuccessAlert(false)}
+              className="absolute top-3 right-3 text-green-600 hover:text-green-700"
+            >
+              ×
+            </button>
+          </Alert>
+        )}
 
+        {/* Bulk Actions Bar */}
+        {selectedPayeeIds.size > 0 && (
+          <BulkActionsBar
+            selectedCount={selectedPayeeIds.size}
+            totalCount={data.length}
+            onExportCSV={handleBulkExportCSV}
+            onExportPDF={() => alert('PDF export coming soon!')}
+            onDelete={handleBulkDelete}
+            entityName="payee"
+          />
+        )}
+
+        {/* Header Section with TIN Match Export */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Recipient Information</h3>
+            <p className="text-sm text-gray-600 mt-1">Add payee details one by one or upload via CSV</p>
+          </div>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* TIN Match Data Export Dropdown */}
+            {data.length > 0 && data.filter(p => p.ssnTin).length > 0 && (
+              <div className="flex items-center gap-2">
+                <Select onValueChange={(value) => {
+                  if (value === 'text') downloadTinMatchData('all', 'txt');
+                  if (value === 'csv') downloadTinMatchData('all', 'csv');
+                }}>
+                  <SelectTrigger className="w-[220px] h-10 border-2 border-blue-600 text-blue-600 font-medium hover:bg-blue-50 transition-colors">
+                    <SelectValue placeholder="Download TIN Match File" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Download Text File
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="csv">
+                      <div className="flex items-center gap-2">
+                        <FileDown className="h-4 w-4" />
+                        Download CSV File
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="h-9 w-9 rounded-md border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                        <Info className="h-5 w-5 text-blue-600" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm bg-gray-900 text-white p-4">
+                      <p className="font-bold text-base mb-3">📋 TIN Match File Download</p>
+                      <p className="text-sm leading-relaxed mb-2">
+                        <strong className="text-blue-300">Text File (.txt):</strong> Use this format for IRS submission or offline record-keeping. Standard format required for TIN validation.
+                      </p>
+                      <p className="text-sm leading-relaxed mb-3">
+                        <strong className="text-green-300">CSV File (.csv):</strong> Compatible with Excel or accounting software. Ideal for data analysis and record management.
+                      </p>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-xs text-gray-400">
+                          ✓ {data.filter(p => p.ssnTin).length} recipient(s) with TIN available for export
+                        </p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+
+            <Button 
+              onClick={downloadSampleCSV} 
+              variant="outline"
+              className="h-10 px-4 border-2 border-green-600 text-green-600 font-medium hover:bg-green-50 hover:shadow-md hover:scale-105 transition-all duration-200"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Sample CSV
+            </Button>
+            <Button 
+              onClick={() => document.getElementById('payee-csv-upload')?.click()} 
+              variant="outline"
+              className="h-10 px-4 border-2 border-blue-600 text-blue-600 font-medium hover:bg-blue-50 hover:shadow-md hover:scale-105 transition-all duration-200"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload CSV
+            </Button>
+            <input
+              id="payee-csv-upload"
+              type="file"
+              accept=".csv"
+              onChange={handleCSVUpload}
+              className="hidden"
+            />
+            <Button onClick={addPayee} className="h-10 px-5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+              Add Recipient
+            </Button>
+          </div>
+        </div>
+      
       {data.length === 0 ? (
         <Card className="professional-shadow">
           <CardContent className="text-center py-12">
@@ -1614,46 +1873,36 @@ function PayeeForm({
         <Card className="professional-shadow-lg">
           <CardContent className="p-0">
             {/* Table View */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gradient-to-r from-blue-50 to-blue-100/80 border-b-2 border-blue-200">
                   <tr>
-                    <th className="px-4 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={selectedRecipients.length === data.length && data.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedRecipients(data.map((_, i) => i));
-                          } else {
-                            setSelectedRecipients([]);
-                          }
-                        }}
-                        className="rounded border-gray-300"
+                    <th className="px-6 py-3 text-left w-16">
+                      <Checkbox
+                        checked={selectedPayeeIds.size === data.length && data.length > 0}
+                        onCheckedChange={toggleAllPayees}
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SSN/TIN</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issuer (Payer)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Form Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left w-16 text-xs font-bold text-blue-900 uppercase tracking-wide">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Recipient Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">SSN/TIN</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Issuer (Payer)</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">City</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">State</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Form Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase tracking-wide">Amount</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-blue-900 uppercase tracking-wide pr-6">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {data.map((payee, index) => (
                     <>
-                      <tr key={index} className="hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedRecipients.includes(index)}
-                            onChange={() => toggleRecipientSelection(index)}
-                            className="rounded border-gray-300"
+                      <tr key={index} className="hover:bg-blue-50/50 transition-all duration-200 cursor-pointer border-b border-gray-100 group">
+                        <td className="px-6 py-3">
+                          <Checkbox
+                            checked={selectedPayeeIds.has(index)}
+                            onCheckedChange={() => togglePayeeSelection(index)}
                           />
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">{index + 1}</td>
@@ -1881,9 +2130,13 @@ function PayeeForm({
                                     {formDefinitions[payee.formType as FormType]?.fields.slice(0, 6).map((field) => (
                                       <Field key={field.id} label={field.label} htmlFor={`${field.id}-${index}`}>
                                         {field.type === "checkbox" ? (
-                                          <div className="flex items-center space-x-2 mt-2">
-                                            <Checkbox id={`${field.id}-${index}`} />
-                                            <Label htmlFor={`${field.id}-${index}`} className="text-xs">
+                                          <div className="flex items-center space-x-3 mt-2">
+                                            <input 
+                                              type="checkbox"
+                                              id={`${field.id}-${index}`}
+                                              className="checkbox-enhanced"
+                                            />
+                                            <Label htmlFor={`${field.id}-${index}`} className="text-sm font-medium">
                                               {field.label}
                                             </Label>
                                           </div>
@@ -1910,6 +2163,24 @@ function PayeeForm({
                                   </div>
                                 </div>
                               )}
+
+                              {/* Save/Cancel Buttons */}
+                              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-blue-200">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => cancelEditPayee(index)}
+                                  className="border-gray-300 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => savePayee(index)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Save Payee
+                                </Button>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1996,13 +2267,14 @@ function FormSelectionStep({
                       <div key={field.id}>
                         {field.type === "checkbox" ? (
                           <div className="flex items-start space-x-3">
-                            <Checkbox 
+                            <input 
+                              type="checkbox"
                               id={field.id}
                               checked={formData[field.id] || false}
-                              onCheckedChange={(checked) => onFormDataChange(field.id, checked)}
-                              className="mt-1"
+                              onChange={(e) => onFormDataChange(field.id, e.target.checked)}
+                              className="checkbox-enhanced mt-1"
                             />
-                            <Label htmlFor={field.id} className="text-sm leading-relaxed">
+                            <Label htmlFor={field.id} className="text-sm leading-relaxed font-medium">
                               {field.label}
                             </Label>
                           </div>
@@ -2034,13 +2306,14 @@ function FormSelectionStep({
                       <div key={field.id}>
                         {field.type === "checkbox" ? (
                           <div className="flex items-start space-x-3">
-                            <Checkbox 
+                            <input 
+                              type="checkbox"
                               id={field.id}
                               checked={formData[field.id] || false}
-                              onCheckedChange={(checked) => onFormDataChange(field.id, checked)}
-                              className="mt-1"
+                              onChange={(e) => onFormDataChange(field.id, e.target.checked)}
+                              className="checkbox-enhanced mt-1"
                             />
-                            <Label htmlFor={field.id} className="text-sm leading-relaxed">
+                            <Label htmlFor={field.id} className="text-sm leading-relaxed font-medium">
                               {field.label}
                             </Label>
                           </div>

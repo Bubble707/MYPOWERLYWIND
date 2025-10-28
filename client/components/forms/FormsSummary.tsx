@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -22,6 +23,12 @@ import { SendNewRequestModal } from './SendNewRequestModal';
 import { ViewFormDetailsModal } from './ViewFormDetailsModal';
 import { TransferTo1099Modal } from './TransferTo1099Modal';
 import { downloadFormPDF, downloadAllFormsAsZip, downloadSelectedFormsAsZip } from '@/lib/pdfGenerator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Download, 
   MoreVertical, 
@@ -33,7 +40,9 @@ import {
   Filter,
   Plus,
   Archive,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Info,
+  CheckCircle
 } from 'lucide-react';
 
 interface FormRequest {
@@ -45,13 +54,17 @@ interface FormRequest {
   attachedDocuments: string;
   updateDate: string;
   issueNumber?: string;
+  issuerName?: string;
 }
 
 interface FormsSummaryProps {
   formType?: string;
+  showSuccessAlert?: boolean;
+  successMessage?: string;
+  onDismissAlert?: () => void;
 }
 
-export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
+export function FormsSummary({ formType = 'All', showSuccessAlert = false, successMessage = '', onDismissAlert }: FormsSummaryProps) {
   // Mock data - Replace with actual API data
   const [formRequests] = useState<FormRequest[]>([
     {
@@ -62,6 +75,7 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
       status: 'Pending',
       attachedDocuments: 'No document',
       updateDate: '10/07/25',
+      issuerName: 'Acme Corporation',
     },
     {
       id: '2',
@@ -71,6 +85,7 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
       status: 'Pending',
       attachedDocuments: 'No document',
       updateDate: '10/07/25',
+      issuerName: 'Tech Solutions LLC',
     },
     {
       id: '3',
@@ -254,6 +269,24 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
 
   return (
     <div className="space-y-6">
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <Alert className="bg-green-50 border-green-200 animate-fade-in">
+          <CheckCircle className="h-5 w-5 text-green-600" />
+          <AlertDescription className="text-green-800 flex items-center justify-between">
+            <span className="font-semibold">{successMessage}</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onDismissAlert}
+              className="h-6 w-6 p-0 hover:bg-green-100"
+            >
+              ×
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Send New Request Modal */}
       <SendNewRequestModal 
         open={showSendModal} 
@@ -280,7 +313,20 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Form Requests Summary</CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      <CardTitle className="text-2xl">Form Summary</CardTitle>
+                      <Info className="h-5 w-5 text-gray-400 hover:text-blue-600 transition-colors" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="font-semibold">Form Summary of Payees/Affiliates/Vendors</p>
+                    <p className="text-sm mt-1">This shows the summary of W-9 forms linked to issuers.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <CardDescription className="mt-1">
                 Total results: {filteredRequests.length}
               </CardDescription>
@@ -431,6 +477,7 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
                     />
                   </TableHead>
                   <TableHead>Vendor Name</TableHead>
+                  <TableHead>Issuer</TableHead>
                   <TableHead>Issue 1099</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Attached Documents</TableHead>
@@ -441,7 +488,7 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
               <TableBody>
                 {filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       No form requests found
                     </TableCell>
                   </TableRow>
@@ -465,6 +512,17 @@ export function FormsSummary({ formType = 'All' }: FormsSummaryProps) {
                             </div>
                             <div className="text-sm text-gray-500">{request.email}</div>
                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {request.issuerName ? (
+                            <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
+                              {request.issuerName}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400">Not assigned</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

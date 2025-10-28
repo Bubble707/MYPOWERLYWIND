@@ -25,7 +25,7 @@ Shows all form requests with:
 - ✅ Actions menu (View/Resend/Delete)
 
 ### **3. Search & Filter**
-- **Search Bar**: Search by vendor name, email, or form type
+- **Search Bar**: Search by vendor name, email, issuer name, or form type
 - **Status Filters**: All / Pending / Completed
 - **Total Results**: Shows count of filtered results
 
