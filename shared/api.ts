@@ -69,6 +69,31 @@ export interface EfileUploadResponse {
   message?: string;
 }
 
+export interface ExtensionRequest {
+  taxYear: string;
+  formType: string;
+  payer: {
+    name: string;
+    ein: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  contact: {
+    email: string;
+    phone: string;
+  };
+  requestDate: string;
+}
+
+export interface ExtensionRequestResponse {
+  success: boolean;
+  message: string;
+  confirmationNumber?: string;
+  requestId?: string;
+}
+
 /**
  * Minimal ASCII generator. Not the official IRS FIRE spec; includes all fields in fixed-order
  * key=value pairs for each section, separated by CRLF lines.
